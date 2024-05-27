@@ -1,0 +1,38 @@
+{
+    "$schema": "https://rph.space/oneloader.manifestv1.schema.json",
+    "id":"oneloader",
+    "name":"OneLoader assistant",
+    "description": "A helper mod for OneLoader",
+    "manifestVersion": 1,
+    "version": "1.4",
+    "_flags":[
+        "prevent_disable",
+        "randomize_plugin_name"
+    ],
+    "files":{
+        "plugins":[
+            "oneloader-assistant.js",
+            "oneloader-version-text.js",
+            "oneloader-detect-gomori.js"
+        ]
+    },
+    "asyncExec":[
+        {
+            "file":"oneloader-fix-videos.js",
+            "runat":"pre_window_onload"
+        },
+        {
+            "file":"oneloader-updater.js",
+            "runat":"pre_window_onload"
+        },
+        {
+            "file":"oneloader-update-installer.js",
+            "runat":"pre_stage_2"
+        },
+        {
+            "file":"oneloader-icon-handler.js",
+            "runat":"pre_stage_2"
+        }
+    ],
+    "satisfies": ["modloader"]
+}
