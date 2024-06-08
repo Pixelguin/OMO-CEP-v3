@@ -2,15 +2,15 @@
 name: CEP support
 about: Report a problem you're having and get assistance
 title: ''
-labels: ''
+labels: support
 assignees: ''
 
 ---
 
-**Describe the bug**
+**Describe the problem**
 Describe your problem clearly and concisely.
 
-**To Reproduce**
+**How to reproduce**
 * List steps to reproduce the behavior.
 * Be as thorough as you can and use bullet points like this.
 
