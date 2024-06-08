@@ -1,14 +1,14 @@
 ---
-name: Bug report
-about: Create a report to help us improve
+name: OMO CEP support
+about: Report a problem you're having and get assistance
 title: ''
-labels: bug
+labels: ''
 assignees: ''
 
 ---
 
 **Describe the bug**
-Describe the bug clearly and concisely.
+Describe your problem clearly and concisely.
 
 **To Reproduce**
 * List steps to reproduce the behavior.
