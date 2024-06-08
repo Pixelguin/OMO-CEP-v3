@@ -1,5 +1,5 @@
 ---
-name: OMO CEP support
+name: CEP support
 about: Report a problem you're having and get assistance
 title: ''
 labels: ''
