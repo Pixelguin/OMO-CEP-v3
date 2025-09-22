@@ -9,10 +9,11 @@ if ($modLoader.$nwMajor < 45) {
             let objectURL = URL.createObjectURL(b);
             let vidObj = old.call(this, {src: objectURL, mime: "video/" + videoSrc.split(".")[videoSrc.split(".").length - 1]}, scaleMode, crossorigin, autoPlay);
             let a = setInterval(function( ){
-                if (vidObj.source.readyState === 4 && (vidObj.source.buffered.end(0) >= vidObj.source.duration) && vidObj.source.ended) {
-                    window._logLine("YANFLY VIDEO Revoking object url");
+                if (!vidObj || !vidObj.source) {
+                    window._logLine("YANFLY VIDEO some bullshit happened");
                     URL.revokeObjectURL(objectURL);
                     clearInterval(a);
+                    return;
                 }
             }, 300);
             return vidObj;
@@ -20,6 +21,17 @@ if ($modLoader.$nwMajor < 45) {
             old.call(this, ...arguments);
         }
     };
+
+    let oldDestroy = PIXI.VideoBaseTexture.destroy;
+    PIXI.VideoBaseTexture.destroy = function() {
+        let cs = this.source.src;
+        console.log(cs);
+        if (cs.startsWith("blob:")) {
+            window._logLine("YANFLY VIDEO Revoking object url");
+            URL.revokeObjectURL(cs);
+        }
+        oldDestroy.call(this, ...arguments);
+    }
 
     let old_stock_playvideo = Graphics._playVideo;
     let old_onvideoend = Graphics._onVideoEnd;

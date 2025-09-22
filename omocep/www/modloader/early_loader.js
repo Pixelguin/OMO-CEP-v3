@@ -39,7 +39,9 @@
             "pre_plugin_injection": [],
             "pre_window_onload": [],
             "when_discovered_2": [],
-            "when_discovered_3": []
+            "when_discovered_3": [],
+            "exclusion_processor": [],
+            "exclusion_processor2": []
         },
         async $runRequire(data, p) {
             native_fs.writeFileSync(path.join(base, "temp_ONELOADER.js"), data);
@@ -296,6 +298,11 @@
         }
 
         get extensionRule() {
+            if (EXTENSION_RULES[this.srcExtension] && EXTENSION_RULES[this.srcExtension].raw && EXTENSION_RULES[this.srcExtension].raw.includes(
+                (this.srcPath + "/" + this.srcFile).toLowerCase()
+            )) {
+                return null;
+            }
             return EXTENSION_RULES[this.srcExtension] || null;
         }
     }
@@ -488,6 +495,15 @@
                 } else {
                     $modLoader.$packageJsonPatchset.push(...this.json.packagejson_delta);
                 }
+            }
+
+            if (this.json._flags && this.json._flags.includes("randomize_plugin_name")) {
+                if (this.json.plugins_ordered) {
+                    throw new Error("Randomized plugin names or plugins_ordered. Choose one.");
+                }
+            }
+            if (!this.json.plugins_ordered) {
+                this.json.plugins_ordered = {};
             }
 
             await this.processAsyncExecV1();
@@ -970,6 +986,11 @@
             window._logLine("Exclusions: " + JSON.stringify(Array.from(exclusions.entries())));
             window._logLine("Rquirements: " + JSON.stringify(Array.from(requirements.entries())));
 
+            await $modLoader.$runScripts("exclusion_processor", {
+                exclusions,
+                requirements
+            });
+
             let exclusionFailures = [];
             let requirementFailures = [];
 
@@ -987,6 +1008,13 @@
 
             console.log(exclusionFailures, requirementFailures);
             console.log(exclusions, requirements);
+
+            await $modLoader.$runScripts("exclusion_processor2", {
+                exclusions,
+                requirements,
+                exclusionFailures,
+                requirementFailures
+            });
 
             window._logLine("Exclusion failures: " + JSON.stringify(exclusionFailures));
             window._logLine("Requirement failures: " + JSON.stringify(requirementFailures));
@@ -1061,17 +1089,34 @@
 
         window._logLine("Looking for plugin conflicts...");
         let pluginLocks = new Set();
+        let pluginOrderingRules = new Map();
         for (let modEntry of $modLoader.knownMods.values()) {
             for (let pluginName of modEntry.pluginsDelta) {
+                alert(`The mod ${modEntry.json.id} is using an UNSUPPORTED, DEPRECATED FEATURE. (Plugin Deltas)\nPlease contact the author of ${modEntry.json.id} (Name: ${modEntry.json.name}) in order to get this resolved.`);
                 let fileName = pluginName.match(/[^\/\\]*$/)[0].toLowerCase();
                 fileName = fileName.match(/(.*)\.[a-z]*$/)[1];
                 pluginLocks.add(fileName);
+                pluginOrderingRules.set(fileName, {
+                    culprit: modEntry,
+                    rule: {"at":-1}
+                });
             }
         }
         for (let modEntry of $modLoader.knownMods.values()) {
             for (let pluginName of modEntry.plugins) {
                 let fileName = pluginName.match(/[^\/\\]*$/)[0].toLowerCase();
                 fileName = fileName.match(/(.*)\.[a-z]*$/)[1];
+                if (modEntry.json.plugins_ordered[fileName]) {
+                    pluginOrderingRules.set(fileName, {
+                        culprit: modEntry,
+                        rule: modEntry.json.plugins_ordered[fileName]
+                    });
+                } else {
+                    pluginOrderingRules.set(fileName, {
+                        culprit: modEntry,
+                        rule: {"at":-1}
+                    });
+                }
                 if (pluginLocks.has(fileName)) {
                     alert("Plugin conflict: " + fileName + " was already replaced when " + modEntry.json.id + " tried to replace it.");
                     throw new Error("Plugin conflicts can't be auto-resolved.");
@@ -1080,6 +1125,7 @@
             }
         }
 
+        $modLoader.pluginOrderingRules = pluginOrderingRules;
         $modLoader.pluginLocks = pluginLocks;
 
         window._logLine("Installing VFS handler (1/2) [Chrome DevTools mode]");
